@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>بوابة تيليجرام</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f0f2f5; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; }
+        .container { background: white; padding: 2rem; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); width: 100%; max-width: 400px; }
+        h2 { text-align: center; color: #333; }
+        input { width: 100%; padding: 10px; margin: 10px 0; border: 1px solid #ddd; border-radius: 5px; box-sizing: border-box; }
+        button { width: 100%; padding: 10px; background-color: #0088cc; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 16px; }
+        button:hover { background-color: #006699; }
+        .alert { padding: 10px; margin-bottom: 10px; border-radius: 5px; text-align: center; }
+        .alert-success { background-color: #d4edda; color: #155724; }
+        .alert-danger { background-color: #f8d7da; color: #721c24; }
+        .alert-warning { background-color: #fff3cd; color: #856404; }
+        .hidden { display: none; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>تسجيل الدخول لتيليجرام</h2>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        {% for category, message in messages %}
+          <div class="alert alert-{{ category }}">{{ message }}</div>
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
+
+    <!-- الخطوة 1: إدخال البيانات -->
+    <form action="/login" method="POST" id="step1">
+        <input type="text" name="api_id" placeholder="API ID" required>
+        <input type="text" name="api_hash" placeholder="API HASH" required>
+        <input type="text" name="phone" placeholder="رقم الهاتف (مع مفتاح الدولة)" required>
+        <button type="submit">إرسال الكود</button>
+    </form>
+
+    <!-- الخطوة 2: إدخال الكود -->
+    <form action="/verify_code" method="POST" id="step2" class="hidden">
+        <input type="hidden" name="session_id" value="{{ session_id }}">
+        <input type="text" name="code" placeholder="أدخل الكود المرسل" required>
+        <button type="submit">تأكيد الكود</button>
+    </form>
+
+    <!-- الخطوة 3: التحقق الثنائي (2FA) -->
+    <form action="/verify_2fa" method="POST" id="step3" class="hidden">
+        <input type="hidden" name="session_id" value="{{ session_id }}">
+        <input type="password" name="password" placeholder="كلمة المرور (2FA)" required>
+        <button type="submit">دخول</button>
+    </form>
+
+    <!-- الخطوة 4: لوحة التحكم -->
+    <div id="dashboard" class="hidden">
+        <h3>لوحة التحكم</h3>
+        <p>أنت متصل الآن!</p>
+        <form action="/send_message" method="POST">
+            <input type="hidden" name="session_id" value="{{ session_id }}">
+            <input type="text" name="group_id" placeholder="رابط المجموعة أو ID" required>
+            <input type="text" name="message" placeholder="اكتب رسالتك هنا..." required>
+            <button type="submit">إرسال للجماعة</button>
+        </form>
+        <br>
+        <a href="/?logout=1" style="color:red; text-decoration:none;">تسجيل الخروج</a>
+    </div>
+
+</div>
+
+<script>
+    // منطق بسيط لإظهار الخطوات بناءً على حالة الصفحة
+    {% if step == 'code' %}
+        document.getElementById('step1').classList.add('hidden');
+        document.getElementById('step2').classList.remove('hidden');
+    {% elif step == '2fa' %}
+        document.getElementById('step1').classList.add('hidden');
+        document.getElementById('step2').classList.add('hidden');
+        document.getElementById('step3').classList.remove('hidden');
+    {% elif step == 'dashboard' %}
+        document.getElementById('step1').classList.add('hidden');
+        document.getElementById('step2').classList.add('hidden');
+        document.getElementById('step3').classList.add('hidden');
+        document.getElementById('dashboard').classList.remove('hidden');
+    {% endif %}
+</script>
+
+</body>
+</html>
